@@ -4,6 +4,11 @@ WORKDIR /app
 COPY . .
 WORKDIR /app/server/mcp-server
 
+EXPOSE 8080
+
+# 直接显示错误
+CMD python3 -u server.py 2>&1 || echo "Python 应用启动失败"
+
 # 调试：检查文件结构
 RUN echo "=== 检查文件 ===" && ls -la
 
