@@ -6,15 +6,14 @@ WORKDIR /app/server/mcp-server
 
 EXPOSE 8080
 
-# 简化调试版本
-CMD echo "=== 环境变量检查 ===" && \
-    env | grep -E "(MCP|NETEASE|PORT)" && \
-    echo "=== Python 版本 ===" && \
+# 逐步调试
+CMD echo "Step 1: Python version" && \
     python3 --version && \
-    echo "=== 文件检查 ===" && \
-    ls -la server.py && \
-    echo "=== 尝试启动 ===" && \
-    python3 -c "import sys; print('Python working')" && \
-    echo "=== 启动服务 ===" && \
+    echo "Step 2: Check files" && \
+    ls -la && \
+    echo "Step 3: Check server.py exists" && \
+    test -f server.py && echo "server.py exists" || echo "server.py missing" && \
+    echo "Step 4: Try basic Python" && \
+    python3 -c "print('Python works')" && \
+    echo "Step 5: Start server" && \
     python3 server.py
-
