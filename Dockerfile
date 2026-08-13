@@ -6,6 +6,7 @@ WORKDIR /app/server/mcp-server
 
 EXPOSE 8080
 
-# 强制显示所有输出
-CMD echo "Starting server..." && \
-    python3 -u server.py 2>&1
+CMD echo "Checking syntax..." && \
+    python3 -m py_compile server.py && \
+    echo "Syntax OK, trying to run..." && \
+    timeout 30 python3 -u server.py || echo "Script failed or timeout"
