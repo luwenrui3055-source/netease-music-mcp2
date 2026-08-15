@@ -8,6 +8,9 @@ EXPOSE 8080
 
 CMD sed -i 's/localhost/0.0.0.0/g' server.py && \
     sed -i 's/127\.0\.0\.1/0.0.0.0/g' server.py && \
-    echo "=== Testing with current cookie ===" && \
+    sed -i 's/PORT = .*/PORT = 8080/g' server.py && \
+    echo "=== Forcing port 8080 ===" && \
+    grep -n "PORT" server.py && \
+    echo "=== Starting server ===" && \
     python3 -u server.py
 
