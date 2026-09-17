@@ -103,7 +103,7 @@ def get_play_history(params):
 
 def get_recent_plays(params):
     """Get actual recent play events with timestamps."""
-    limit = min(int(params.get('limit', 100)), 300)
+    limit = min(int(params.get('limit', 30)), 300)
     result = netease_request(f'/api/play-record/song/list?limit={limit}', method='GET')
     if not result or result.get('code') != 200:
         return {"error": "Failed to get recent plays", "detail": result}
@@ -344,6 +344,30 @@ def get_liked_songs(params):
     ids = result.get('ids', [])
     return {"count": len(ids), "song_ids": ids[:200], "note": f"Showing first 200 of {len(ids)} liked songs" if len(ids) > 200 else None}
 
+def get_now_playing(params):
+    """Get the currently (most recently) playing song."""
+    result = netease_request('/api/play-record/song/list?limit=1', method='GET')
+    if not result or result.get('code') != 200:
+        return {"error": "Failed to get now playing", "detail": result}
+    records = result.get('data', {}).get('list', [])
+    if not records:
+        return {"message": "No recent play record"}
+    r = records[0]
+    song = r.get('data', {})
+    artists = ', '.join(a['name'] for a in song.get('ar', []))
+    album = song.get('al', {}).get('name', '?')
+    cover = song.get('al', {}).get('picUrl', '')
+    play_time = r.get('time', 0)
+    time_str = time.strftime('%Y-%m-%d %H:%M UTC', time.gmtime(play_time / 1000)) if play_time else '?'
+    return {
+        "now_playing": f"{song.get('name', '?')} - {artists}",
+        "song_id": song.get('id'),
+        "album": album,
+        "cover": cover,
+        "last_played": time_str
+    }
+
+
 
 
 # --- Tool Registry ---
@@ -355,7 +379,7 @@ TOOLS = [
     {"name": "get_play_history", "description": "Get play history rankings (weekly or all-time).",
      "inputSchema": {"type": "object", "properties": {"all_time": {"type": "boolean", "description": "true=all time, false=this week"}, "limit": {"type": "integer", "description": "Number of records (default 30)"}}}},
     {"name": "get_recent_plays", "description": "Get actual recent play events with timestamps.",
-     "inputSchema": {"type": "object", "properties": {"limit": {"type": "integer", "description": "Number of events (1-300, default 100)"}}}},
+     "inputSchema": {"type": "object", "properties": {"limit": {"type": "integer", "description": "Number of events (1-300, default 30)"}}}},
     {"name": "daily_recommend", "description": "Get today's personalized song recommendations.",
      "inputSchema": {"type": "object", "properties": {}}},
     {"name": "list_my_playlists", "description": "List all playlists of the logged-in user.",
@@ -384,6 +408,9 @@ TOOLS = [
      "inputSchema": {"type": "object", "properties": {}}},
     {"name": "get_liked_songs", "description": "Get all liked (red-heart) song IDs for the current user.",
      "inputSchema": {"type": "object", "properties": {}}},
+    {"name": "get_now_playing", "description": "Get the most recently played song (approximates currently playing).",
+     "inputSchema": {"type": "object", "properties": {}}},
+
 ]
 
 def get_user_level(params):
@@ -427,6 +454,8 @@ TOOL_DISPATCH = {
     "get_personal_fm": get_personal_fm,
     "get_liked_songs": get_liked_songs,
     "get_user_level": get_user_level,
+    "get_now_playing": get_now_playing,
+
 }
 
 # --- MCP Protocol Handler ---
