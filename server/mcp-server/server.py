@@ -103,7 +103,7 @@ def get_play_history(params):
 
 def get_recent_plays(params):
     """Get actual recent play events with timestamps."""
-    limit = min(int(params.get('limit', 30)), 300)
+    limit = min(int(params.get('limit', 30)), 50)
     result = netease_request(f'/api/play-record/song/list?limit={limit}', method='GET')
     if not result or result.get('code') != 200:
         return {"error": "Failed to get recent plays", "detail": result}
@@ -379,7 +379,7 @@ TOOLS = [
     {"name": "get_play_history", "description": "Get play history rankings (weekly or all-time).",
      "inputSchema": {"type": "object", "properties": {"all_time": {"type": "boolean", "description": "true=all time, false=this week"}, "limit": {"type": "integer", "description": "Number of records (default 30)"}}}},
     {"name": "get_recent_plays", "description": "Get actual recent play events with timestamps.",
-     "inputSchema": {"type": "object", "properties": {"limit": {"type": "integer", "description": "Number of events (1-300, default 30)"}}}},
+     "inputSchema": {"type": "object", "properties": {"limit": {"type": "integer", "description": "Number of events (1-50, default 30)"}}}},
     {"name": "daily_recommend", "description": "Get today's personalized song recommendations.",
      "inputSchema": {"type": "object", "properties": {}}},
     {"name": "list_my_playlists", "description": "List all playlists of the logged-in user.",
