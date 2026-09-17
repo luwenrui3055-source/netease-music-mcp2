@@ -107,7 +107,7 @@ def get_recent_plays(params):
     result = netease_request(f'/api/play-record/song/list?limit={limit}', method='GET')
     if not result or result.get('code') != 200:
         return {"error": "Failed to get recent plays", "detail": result}
-    records = result.get('data', {}).get('list', [])
+    records = result.get('data', {}).get('list', [])[:limit]
     output = []
     for i, r in enumerate(records, 1):
         song = r.get('data', {})
