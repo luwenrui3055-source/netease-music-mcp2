@@ -113,7 +113,10 @@ def get_recent_plays(params):
         song = r.get('data', {})
         artists = ', '.join(a['name'] for a in song.get('ar', []))
         play_time = r.get('playTime', 0)
-        time_str = time.strftime('%Y-%m-%d %H:%M', time.localtime(play_time / 1000)) if play_time else '?'
+        from datetime import datetime, timezone, timedelta
+        tz_shanghai = timezone(timedelta(hours=8))
+        time_str = datetime.fromtimestamp(play_time / 1000, tz=tz_shanghai).strftime('%Y-%m-%d %H:%M')
+        if play_time else '?'
         output.append(f"{i}. {song.get('name', '?')} - {artists} (ID:{song.get('id')}) [{time_str}]")
     return {"recent_plays": output}
 
