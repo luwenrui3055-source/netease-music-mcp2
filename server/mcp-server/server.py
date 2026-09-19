@@ -108,6 +108,8 @@ def get_recent_plays(params):
     if not result or result.get('code') != 200:
         return {"error": "Failed to get recent plays", "detail": result}
     records = result.get('data', {}).get('list', [])[:limit]
+    if records:
+    logger.info(f"[DEBUG] First record structure: {json.dumps(records[0], ensure_ascii=False)[:500]}")
     output = []
     for i, r in enumerate(records, 1):
         song = r.get('data', {})
