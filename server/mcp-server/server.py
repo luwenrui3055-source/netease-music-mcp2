@@ -8,6 +8,8 @@ GitHub: https://github.com/Vael-KY/netease-music-mcp
 License: MIT
 """
 import http.server, json, os, urllib.request, urllib.parse, threading, uuid, time, logging
+from datetime import datetime, timezone, timedelta
+tz_shanghai = timezone(timedelta(hours=8))
 from http.server import HTTPServer
 
 # --- Configuration ---
@@ -113,10 +115,7 @@ def get_recent_plays(params):
         song = r.get('data', {})
         artists = ', '.join(a['name'] for a in song.get('ar', []))
         play_time = r.get('playTime', 0)
-        from datetime import datetime, timezone, timedelta
-        tz_shanghai = timezone(timedelta(hours=8))
-        time_str = datetime.fromtimestamp(play_time / 1000, tz=tz_shanghai).strftime('%Y-%m-%d %H:%M')
-        if play_time else '?'
+        time_str = datetime.fromtimestamp(play_time / 1000, tz=tz_shanghai).strftime('%Y-%m-%d %H:%M') if play_time else '?'
         output.append(f"{i}. {song.get('name', '?')} - {artists} (ID:{song.get('id')}) [{time_str}]")
     return {"recent_plays": output}
 
