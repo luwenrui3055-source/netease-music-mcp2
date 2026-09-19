@@ -119,6 +119,67 @@ def get_recent_plays(params):
         output.append(f"{i}. {song.get('name', '?')} - {artists} (ID:{song.get('id')}) [{time_str}]")
     return {"recent_plays": output}
 
+def get_daily_stats(params):
+    """Get listening stats for a specific day (default today, Shanghai timezone)."""
+    from collections import Counter
+    
+    # 解析日期参数
+    date_str = params.get('date')
+    if date_str:
+        try:
+            target_date = datetime.strptime(date_str, '%Y-%m-%d').date()
+        except ValueError:
+            return {"error": "Invalid date format, use YYYY-MM-DD"}
+    else:
+        target_date = datetime.now(tz=tz_shanghai).date()
+    
+    # 拉最近 300 条
+    result = netease_request('/api/play-record/song/list?limit=300', method='GET')
+    if not result or result.get('code') != 200:
+        return {"error": "Failed to get play records", "detail": result}
+    
+    records = result.get('data', {}).get('list', [])
+    
+    # 过滤出目标日期的记录
+    day_records = []
+    for r in records:
+        play_time = r.get('playTime', 0)
+        if not play_time:
+            continue
+        play_dt = datetime.fromtimestamp(play_time / 1000, tz=tz_shanghai)
+        if play_dt.date() == target_date:
+            day_records.append({
+                'name': r.get('data', {}).get('name', '?'),
+                'artists': ', '.join(a['name'] for a in r.get('data', {}).get('ar', [])),
+                'hour': play_dt.hour,
+                'time_str': play_dt.strftime('%H:%M')
+            })
+    
+    if not day_records:
+        return {"date": str(target_date), "total_plays": 0, "message": "No plays on this day"}
+    
+    # 统计
+    song_counter = Counter(f"{r['name']} - {r['artists']}" for r in day_records)
+    artist_counter = Counter()
+    for r in day_records:
+        for a in r['artists'].split(', '):
+            artist_counter[a] += 1
+    
+    late_night_count = sum(1 for r in day_records if 0 <= r['hour'] < 6)
+    
+    first_time = day_records[-1]['time_str']  # 最后一条是最早的（列表倒序）
+    last_time = day_records[0]['time_str']
+    
+    return {
+        "date": str(target_date),
+        "total_plays": len(day_records),
+        "time_span": f"{first_time} - {last_time}",
+        "late_night_plays_0_6": late_night_count,
+        "top_songs": [{"song": s, "count": c} for s, c in song_counter.most_common(3)],
+        "top_artists": [{"artist": a, "count": c} for a, c in artist_counter.most_common(3)]
+    }
+
+
 def daily_recommend(params):
     """Get daily personalized recommendations."""
     result = netease_request('/api/v3/discovery/recommend/songs', method='GET')
@@ -412,6 +473,8 @@ TOOLS = [
      "inputSchema": {"type": "object", "properties": {}}},
     {"name": "get_now_playing", "description": "Get the most recently played song (approximates currently playing).",
      "inputSchema": {"type": "object", "properties": {}}},
+    {"name": "get_daily_stats", "description": "Get listening stats for a specific day (today by default, Shanghai timezone). Returns total plays, time span, top songs/artists, and late-night (0:00-6:00) play count.",
+     "inputSchema": {"type": "object", "properties": {"date": {"type": "string", "description": "Target date in YYYY-MM-DD format. Omit for today."}}}},
 
 ]
 
@@ -457,6 +520,8 @@ TOOL_DISPATCH = {
     "get_liked_songs": get_liked_songs,
     "get_user_level": get_user_level,
     "get_now_playing": get_now_playing,
+    "get_daily_stats": get_daily_stats,
+
 
 }
 
